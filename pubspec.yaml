@@ -1,0 +1,57 @@
+name: project_01
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.3.0   # adjust to your installed Dart SDK (check with `dart --version`)
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Animations
+  lottie: ^3.3.2
+  animated_splash_screen: ^1.3.0
+  flutter_svg: ^2.0.9
+  carousel_slider: ^5.1.1
+  google_fonts: ^6.2.1
+  animations: ^2.0.11
+  flutter_spinkit: ^5.2.1
+
+  # Location
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+
+  # State management
+  provider: ^6.1.2
+
+  # Networking & Utils
+  intl: ^0.20.2
+  http: ^1.2.2
+  shared_preferences: ^2.5.3
+  connectivity_plus: ^7.0.0
+  flutter_dotenv: ^6.0.0
+
+  # ChatGPT SDK (from GitHub)
+  fl_chart: ^1.1.1
+  velocity_x: ^4.3.1
+  gpt_markdown: ^1.1.4
+  share_plus: ^12.0.0
+  loading_animation_widget: ^1.3.0
+  gif: ^2.3.0
+  supabase_flutter: ^2.10.1
+  pinput: ^5.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/animated_icons/
+    - assets/icons/
