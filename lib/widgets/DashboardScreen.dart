@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'side_menu.dart'; // 👈 your SideMenu
 
 class DashboardScreen extends StatefulWidget {
@@ -18,10 +19,14 @@ class _DashboardScreenState extends State<DashboardScreen>
   // 👇 Track current page
   String _currentPage = "Home";
 
+  // 👇 Supabase user info
+  String _userName = "Guest";
+
   @override
   void initState() {
     super.initState();
 
+    // Animation setup
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -32,6 +37,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     _slideAnimation =
         Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero)
             .animate(_animationController);
+
+    // ✅ Get current user name from Supabase
+    final user = Supabase.instance.client.auth.currentUser;
+    setState(() {
+      _userName = user?.userMetadata?['name'] ?? "Guest";
+    });
   }
 
   @override
@@ -95,7 +106,8 @@ class _DashboardScreenState extends State<DashboardScreen>
             position: _slideAnimation,
             child: SideMenu(
               onMenuSelected: _onMenuSelected,
-              selectedMenu: '', // 👈 connect menu tap
+              selectedMenu: _currentPage,
+              userName: _userName, // 👈 Pass dynamic user name
             ),
           ),
 

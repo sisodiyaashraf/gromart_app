@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:project_01/pages/login_pages/login.dart';
 import 'homewidget.dart'; // 👈 import your Homewidget screen
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MenuItemModel {
   final String title;
@@ -19,11 +21,13 @@ class MenuItemModel {
 class SideMenu extends StatefulWidget {
   final Function(String menuTitle)? onMenuSelected;
   final String selectedMenu;
+  final String userName; // ✅ added
 
   const SideMenu({
     super.key,
     this.onMenuSelected,
     required this.selectedMenu,
+    required this.userName,
   });
 
   @override
@@ -44,6 +48,17 @@ class _SideMenuState extends State<SideMenu> {
       _selectedMenu = menu.title;
     });
     widget.onMenuSelected?.call(menu.title);
+  }
+
+  Future<void> _logout() async {
+    await Supabase.instance.client.auth.signOut();
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const PhoneLoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -77,9 +92,15 @@ class _SideMenuState extends State<SideMenu> {
                   child: Icon(Icons.person, color: Colors.black),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  "Ashraf",
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+                Expanded(
+                  child: Text(
+                    widget.userName, // ✅ dynamic name from Supabase
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -103,6 +124,16 @@ class _SideMenuState extends State<SideMenu> {
                 );
               }).toList(),
             ),
+          ),
+
+          // ✅ Logout button at bottom
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.redAccent),
+            title: const Text(
+              "Logout",
+              style: TextStyle(color: Colors.redAccent),
+            ),
+            onTap: _logout,
           ),
         ],
       ),

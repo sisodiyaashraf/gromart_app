@@ -10,6 +10,7 @@ import 'package:project_01/widgets/SearchResultsPage.dart';
 import 'package:project_01/widgets/SeeAllCategoriesPage.dart';
 import 'package:project_01/widgets/searchbar.dart';
 import 'package:project_01/widgets/tabbar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'side_menu.dart';
 
@@ -34,13 +35,17 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
 
   GifController? _gifController;
   bool _isMenuOpen = false;
-
   String _searchQuery = "";
+
+  // ✅ Logged in user
+  String _userName = "Guest";
 
   @override
   void initState() {
     super.initState();
     _gifController = GifController(vsync: this);
+
+    _loadUser(); // load supabase user
 
     Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted && _gifController != null) {
@@ -48,6 +53,15 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
         _gifController!.forward();
       }
     });
+  }
+
+  Future<void> _loadUser() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      setState(() {
+        _userName = user.userMetadata?['name'] ?? "Guest";
+      });
+    }
   }
 
   @override
@@ -125,6 +139,7 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
             child: SideMenu(
               onMenuSelected: _onMenuSelected,
               selectedMenu: '',
+              userName: _userName, // ✅ Pass username to side menu
             ),
           ),
           AnimatedContainer(
@@ -143,6 +158,10 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
                     onPressed: () {
                       setState(() => _isMenuOpen = !_isMenuOpen);
                     },
+                  ),
+                  title: Text(
+                    "Welcome, $_userName 👋",
+                    style: const TextStyle(color: Colors.black87),
                   ),
                   actions: [
                     GestureDetector(
