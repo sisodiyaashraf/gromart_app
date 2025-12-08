@@ -1,6 +1,7 @@
 # project_01
 
 A new Flutter project.
+
 # AI Gromart – Smart Grocery Shopping App
 
 AI Gromart is a Flutter-based **grocery shopping application** powered by **Supabase authentication**, **Provider state management**, and an **AI chatbot (Gemini)**.  
@@ -21,6 +22,11 @@ The app helps users shop smarter, live fresher, and get their groceries delivere
 
 - **Cart & Orders (Provider)**  
   Cart, order history, and promo code logic handled with `provider` for reactive state management.
+
+- **Online Payments (UPI + Stripe)** ✅  
+  Secure and fast payments using:
+  - **UPI** (Google Pay, PhonePe, Paytm, etc.)
+  - **Stripe** for Cards and International Payments
 
 - **Beautiful Onboarding**  
   Includes animated Lottie splash screens and a welcoming intro page.
@@ -44,12 +50,16 @@ The app helps users shop smarter, live fresher, and get their groceries delivere
 - **Backend & Auth:** [Supabase](https://supabase.com/)  
 - **State Management:** [Provider](https://pub.dev/packages/provider)  
 - **AI Chatbot:** [Google Gemini](https://ai.google.dev/) integrated in `ChatProvider`  
+- **Payments:**  
+  - **UPI** (Google Pay, PhonePe, Paytm)  
+  - **Stripe** (Cards & International Payments)  
 - **Animations:** [Lottie](https://lottiefiles.com/)  
 
 ---
 
 ## Project Structure
 
+```bash
 lib/
 ├── main.dart # App entry point
 ├── pages/
@@ -65,8 +75,12 @@ lib/
 │ ├── orders_provider.dart
 │ ├── promo_code_provider.dart
 │ └── chat_provider.dart # Gemini AI integration
+├── services/
+│ ├── stripe_service.dart
+│ └── upi_service.dart
 └── widgets/
 └── homewidget.dart
+
 
 
 ---
@@ -78,7 +92,9 @@ lib/
 3. **First-time login?** → Redirected to **Name Setup Screen**.  
 4. **Returning user** → Redirected to **Homepage**.  
 5. **User interacts with Chatbot** → Gemini answers queries & suggests groceries.  
-6. **Cart & Orders** → Managed via Provider.  
+6. **Cart & Orders** → Managed via Provider.
+7. **User checks out → Pays using UPI or Stripe.
+8. **Order confirmed → Order saved in history.  
 
 ---
 
@@ -89,6 +105,7 @@ lib/
 - Create a [Supabase Project](https://supabase.com/) and enable **Phone OTP Auth**  
 - Get **Gemini API Key** from [Google AI Studio](https://aistudio.google.com/)  
 - Add your `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `GEMINI_API_KEY` to the Flutter project
+- Create a Stripe account and get your Publishable & Secret Keys
 
 ### Installation
 ```bash
