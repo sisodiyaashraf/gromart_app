@@ -76,9 +76,11 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
           );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Invalid OTP")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Invalid OTP")),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,14 +94,18 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
   Future<void> _resendOtp() async {
     try {
       await Supabase.instance.client.auth.signInWithOtp(phone: widget.phone);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("OTP Resent!")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("OTP Resent!")),
+        );
+      }
       _startTimer(); // restart countdown after resend
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error resending OTP: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error resending OTP: $e")),
+        );
+      }
     }
   }
 

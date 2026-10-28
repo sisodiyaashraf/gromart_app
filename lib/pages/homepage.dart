@@ -9,7 +9,8 @@ class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
   @override
-  _HomepageState createState() => _HomepageState();
+  @override
+  State<Homepage> createState() => _HomepageState();
 }
 
 class _HomepageState extends State<Homepage> {
@@ -52,7 +53,7 @@ class _HomepageState extends State<Homepage> {
                 "assets/icons/conversation-svgrepo-com.svg",
                 width: 24,
                 height: 24,
-                color: isSelected ? Colors.black : Colors.white,
+                colorFilter: ColorFilter.mode(isSelected ? Colors.black : Colors.white, BlendMode.srcIn),
               );
             } else if (index == 2) {
               // Orders icon from SVG
@@ -60,7 +61,7 @@ class _HomepageState extends State<Homepage> {
                 "assets/icons/NO959h01.svg",
                 width: 24,
                 height: 24,
-                color: isSelected ? Colors.black : Colors.white,
+                colorFilter: ColorFilter.mode(isSelected ? Colors.black : Colors.white, BlendMode.srcIn),
               );
             } else if (index == 0) {
               // Home as Material Icon
