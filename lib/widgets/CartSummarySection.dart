@@ -140,9 +140,11 @@ class _CartSummarySectionState extends State<CartSummarySection>
     }
 
     if (!silent) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.message)),
+        );
+      }
     }
   }
 
@@ -155,9 +157,11 @@ class _CartSummarySectionState extends State<CartSummarySection>
       _promoController.clear();
       _appliedCode = "";
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Promo removed ❌")),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Promo removed ❌")),
+      );
+    }
   }
 
   /// ✅ Now properly defined
@@ -292,11 +296,11 @@ class _CartSummarySectionState extends State<CartSummarySection>
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withAlpha(0xE6), // 90% opacity
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withAlpha(0x14), // 8% opacity
                 blurRadius: 20,
                 offset: const Offset(0, -4),
               ),
@@ -354,7 +358,7 @@ class _CartSummarySectionState extends State<CartSummarySection>
                         boxShadow: [
                           if (_validPromo)
                             BoxShadow(
-                              color: Colors.green.withOpacity(0.3),
+                              color: Colors.green.withAlpha(0x4D), // 30% opacity
                               blurRadius: 12,
                               spreadRadius: 2,
                             )
@@ -447,7 +451,7 @@ class _CartSummarySectionState extends State<CartSummarySection>
                       borderRadius: BorderRadius.circular(14),
                     ),
                     elevation: 6,
-                    shadowColor: Colors.green.withOpacity(0.3),
+                    shadowColor: Colors.green.withAlpha(0x4D), // 30% opacity
                   ),
                   onPressed: () async {
                     if (cart.cartItems.isEmpty) {
