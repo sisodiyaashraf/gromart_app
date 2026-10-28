@@ -6,6 +6,8 @@ import 'package:project_01/widgets/order.dart';
 import 'package:project_01/widgets/profile.dart';
 
 class Homepage extends StatefulWidget {
+  const Homepage({super.key});
+
   @override
   _HomepageState createState() => _HomepageState();
 }

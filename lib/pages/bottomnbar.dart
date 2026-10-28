@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class CustomBottomNav extends StatefulWidget {
+  const CustomBottomNav({super.key});
+
   @override
   _CustomBottomNavState createState() => _CustomBottomNavState();
 }
