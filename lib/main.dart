@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:project_01/pages/login_pages/login.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // ✅ Your Providers
 import 'package:project_01/pages/cart_provider.dart';
