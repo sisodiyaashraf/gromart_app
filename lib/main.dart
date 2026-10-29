@@ -3,6 +3,8 @@ import 'package:project_01/pages/login_pages/login.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:project_01/provider/address_provider.dart';
+import 'package:project_01/provider/delivery_provider.dart';
 
 // ✅ Your Providers
 import 'package:project_01/pages/cart_provider.dart';
@@ -16,12 +18,13 @@ import 'package:project_01/widgets/homewidget.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Initialize Supabase
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+
+  // Initialize Supabase
   await Supabase.initialize(
-    url:
-        "https://oxqbgaxemoqaspzfmwyp.supabase.co", // replace with your Supabase URL
-    anonKey:
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94cWJnYXhlbW9xYXNwemZtd3lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNDIzNjIsImV4cCI6MjA3NDYxODM2Mn0.g4JDE7eDSkRXWiktQCq-V-PiOT3h7Nb8c0nQIS3-SJc", // replace with your Supabase anon key
+    url: dotenv.get('SUPABASE_URL'),
+    anonKey: dotenv.get('SUPABASE_ANON_KEY'),
   );
 
   runApp(
@@ -31,11 +34,16 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
         ChangeNotifierProvider(create: (_) => PromoCodeProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => AddressProvider()),
+        ChangeNotifierProvider(create: (_) => DeliveryProvider()),
       ],
       child: const MainApp(),
     ),
   );
 }
+
+
+
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
