@@ -56,16 +56,14 @@ class OrderModel {
         "delivery_fee": deliveryFee,
         "delivery_slot": deliverySlot?.toUtc().toIso8601String(),
         "delivery_instructions": deliveryInstructions,
-        "status": status,
-        "created_at": date.toUtc().toIso8601String(),
+
       };
 
   /// Build an OrderModel from Supabase JSON.
   factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
         id: json["id"] as String,
         date: DateTime.parse(json["created_at"] as String).toLocal(),
-        items: (json["items"] as List)
-            .map((e) => ProductModel(
+        items: (json["items"] as List?)?.map((e) => ProductModel(
                   name: e["name"] as String,
                   price: (e["price"] as num).toDouble(),
                   weight: "",
@@ -73,10 +71,9 @@ class OrderModel {
                   boxColor: const Color(0xFFE0E0E0),
                   unit: "1",
                   category: "",
-                ))
-            .toList(),
+                )).toList() ?? [],
         total: (json["total"] as num).toDouble(),
-        status: json["status"] as String,
+        status: (json["status"] as String?) ?? "pending",
         deliveryType: json["delivery_type"] as String?,
         deliveryAddressText: json["delivery_address_text"] as String?,
         deliveryLat: (json["delivery_lat"] as num?)?.toDouble(),
@@ -89,7 +86,8 @@ class OrderModel {
       );
 
   // Dummy data for UI preview – delivery fields are left null.
-  static List<OrderModel> getOrders() => [
+  // Helper for UI preview – keeps dummy data unchanged.
+static List<OrderModel> getOrders() => [
         OrderModel(
           id: "#1001",
           date: DateTime(2025, 9, 20),
