@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:project_01/core/theme/app_colors.dart';
+import 'package:project_01/core/theme/app_radius.dart';
+import 'package:project_01/core/theme/app_spacing.dart';
+import 'package:project_01/core/theme/app_text_styles.dart';
+import 'package:project_01/core/widgets/app_button.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'side_menu.dart'; // 👈 your SideMenu
+import 'side_menu.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -15,30 +20,23 @@ class _DashboardScreenState extends State<DashboardScreen>
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
   bool _isSideMenuOpen = false;
-
-  // 👇 Track current page
   String _currentPage = "Home";
-
-  // 👇 Supabase user info
   String _userName = "Guest";
 
   @override
   void initState() {
     super.initState();
-
-    // Animation setup
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
 
     _scaleAnimation =
-        Tween<double>(begin: 1.0, end: 0.8).animate(_animationController);
+        Tween<double>(begin: 1.0, end: 0.85).animate(_animationController);
     _slideAnimation =
         Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero)
             .animate(_animationController);
 
-    // ✅ Get current user name from Supabase
     final user = Supabase.instance.client.auth.currentUser;
     setState(() {
       _userName = user?.userMetadata?['name'] ?? "Guest";
@@ -71,62 +69,63 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildPageContent() {
-    // ✅ Show back-to-home button on all pages except Home
     if (_currentPage == "Home") {
-      return const Center(child: Text("🏠 Home Page"));
+      return const Center(child: Text("Home Page", style: AppTextStyles.title));
     }
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "📄 $_currentPage Page",
-            style: const TextStyle(fontSize: 22),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: () => _onMenuSelected("Home"),
-            icon: const Icon(Icons.home),
-            label: const Text("Back to Home"),
-          ),
-        ],
+      child: Padding(
+        padding: AppSpacing.screenPadding,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("$_currentPage Page", style: AppTextStyles.headline),
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
+              text: "Back to Home",
+              icon: const Icon(Icons.home_rounded, color: Colors.white),
+              onPressed: () => _onMenuSelected("Home"),
+              width: 180,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final double drawerWidth =
+        (MediaQuery.sizeOf(context).width * 0.75).clamp(240.0, 300.0);
+
     return Scaffold(
-      backgroundColor: Colors.black87,
+      backgroundColor: AppColors.navBackground,
       body: Stack(
         children: [
-          // ✅ Side Menu with callback
           SlideTransition(
             position: _slideAnimation,
             child: SideMenu(
               onMenuSelected: _onMenuSelected,
               selectedMenu: _currentPage,
-              userName: _userName, // 👈 Pass dynamic user name
+              userName: _userName,
             ),
           ),
-
-          // ✅ Main Content
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             transform: Matrix4.translationValues(
-              _isSideMenuOpen ? 250 : 0,
+              _isSideMenuOpen ? drawerWidth : 0,
               0,
               0,
             ),
             child: ScaleTransition(
               scale: _scaleAnimation,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(_isSideMenuOpen ? 20 : 0),
+                borderRadius: _isSideMenuOpen ? AppRadius.xlBorder : BorderRadius.zero,
                 child: Scaffold(
                   appBar: AppBar(
                     title: Text(_currentPage),
                     leading: IconButton(
+                      tooltip: "Toggle Menu",
                       icon: const Icon(Icons.dashboard_customize_rounded),
                       onPressed: toggleMenu,
                     ),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:project_01/core/theme/app_colors.dart';
+import 'package:project_01/core/theme/app_spacing.dart';
+import 'package:project_01/core/theme/app_text_styles.dart';
 import 'package:project_01/pages/login_pages/login.dart';
-import 'homewidget.dart'; // 👈 import your Homewidget screen
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'homewidget.dart';
 
 class MenuItemModel {
   final String title;
@@ -10,18 +13,18 @@ class MenuItemModel {
   MenuItemModel({required this.title, required this.icon});
 
   static List<MenuItemModel> menuItems = [
-    MenuItemModel(title: "Home", icon: Icons.home),
-    MenuItemModel(title: "Search", icon: Icons.search),
-    MenuItemModel(title: "Favorites", icon: Icons.favorite),
-    MenuItemModel(title: "Profile", icon: Icons.person),
-    MenuItemModel(title: "History", icon: Icons.history),
+    MenuItemModel(title: "Home", icon: Icons.home_rounded),
+    MenuItemModel(title: "Search", icon: Icons.search_rounded),
+    MenuItemModel(title: "Favorites", icon: Icons.favorite_rounded),
+    MenuItemModel(title: "Profile", icon: Icons.person_rounded),
+    MenuItemModel(title: "History", icon: Icons.history_rounded),
   ];
 }
 
 class SideMenu extends StatefulWidget {
   final Function(String menuTitle)? onMenuSelected;
   final String selectedMenu;
-  final String userName; // ✅ added
+  final String userName;
 
   const SideMenu({
     super.key,
@@ -44,80 +47,82 @@ class _SideMenuState extends State<SideMenu> {
   }
 
   void onMenuPress(MenuItemModel menu) {
-    setState(() {
-      _selectedMenu = menu.title;
-    });
+    setState(() => _selectedMenu = menu.title);
     widget.onMenuSelected?.call(menu.title);
   }
 
   Future<void> _logout() async {
     await Supabase.instance.client.auth.signOut();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const PhoneLoginScreen()),
-        (route) => false,
-      );
-    }
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const PhoneLoginScreen()),
+      (_) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final double drawerWidth = (MediaQuery.sizeOf(context).width * 0.75).clamp(240.0, 300.0);
+
     return Container(
-      width: 250,
-      color: Colors.blueGrey[900],
+      width: drawerWidth,
+      color: AppColors.navBackground,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ✅ Drawer Header with Back Button
           DrawerHeader(
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0x1FFFFFFF))),
+            ),
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  tooltip: "Back to Home",
+                  icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
                   onPressed: () {
-                    // 👇 Navigate directly to Homewidget
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                          builder: (context) => const Homewidget()),
-                      (route) => false, // clear back stack
+                      MaterialPageRoute(builder: (_) => const Homewidget()),
+                      (_) => false,
                     );
                   },
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 const CircleAvatar(
-                  radius: 24,
+                  radius: 22,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.person, color: Colors.black),
+                  child: Icon(Icons.person, color: AppColors.textPrimary),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    widget.userName, // ✅ dynamic name from Supabase
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    widget.userName,
+                    style: AppTextStyles.subtitle.copyWith(color: Colors.white),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
-
-          // ✅ Menu Items
           Expanded(
             child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               children: MenuItemModel.menuItems.map((menu) {
+                final isSelected = _selectedMenu == menu.title;
                 return ListTile(
-                  leading: Icon(menu.icon, color: Colors.white),
+                  minLeadingWidth: 24,
+                  minVerticalPadding: 14,
+                  leading: Icon(
+                    menu.icon,
+                    color: isSelected ? AppColors.accent : Colors.white,
+                  ),
                   title: Text(
                     menu.title,
-                    style: TextStyle(
-                      color: _selectedMenu == menu.title
-                          ? Colors.greenAccent
-                          : Colors.white,
+                    style: AppTextStyles.body.copyWith(
+                      color: isSelected ? AppColors.accent : Colors.white,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   onTap: () => onMenuPress(menu),
@@ -125,15 +130,21 @@ class _SideMenuState extends State<SideMenu> {
               }).toList(),
             ),
           ),
-
-          // ✅ Logout button at bottom
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.redAccent),
-            title: const Text(
-              "Logout",
-              style: TextStyle(color: Colors.redAccent),
+          SafeArea(
+            top: false,
+            child: ListTile(
+              minLeadingWidth: 24,
+              minVerticalPadding: 14,
+              leading: const Icon(Icons.logout_rounded, color: AppColors.error),
+              title: Text(
+                "Logout",
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onTap: _logout,
             ),
-            onTap: _logout,
           ),
         ],
       ),

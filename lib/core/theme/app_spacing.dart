@@ -13,6 +13,8 @@ class AppSpacing {
   static const EdgeInsets screenPaddingHorizontal = EdgeInsets.symmetric(horizontal: 16.0);
   static const EdgeInsets cardPadding = EdgeInsets.all(12.0);
 
-  // Bottom Navigation Safe Offset (prevents bottom nav bar from covering content)
-  static const double bottomNavInset = 88.0;
+  // Dynamic bottom navigation bar inset derived from real bar height + system bottom safe area
+  static double bottomNavInset(BuildContext context, {double navBarHeight = 64.0}) {
+    return navBarHeight + MediaQuery.paddingOf(context).bottom;
+  }
 }

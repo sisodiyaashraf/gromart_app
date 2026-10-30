@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:project_01/core/theme/app_colors.dart';
+import 'package:project_01/core/theme/app_spacing.dart';
+import 'package:project_01/core/theme/app_text_styles.dart';
+import 'package:project_01/core/widgets/app_button.dart';
+import 'package:project_01/core/widgets/responsive_body.dart';
 import 'package:project_01/widgets/homewidget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,6 +17,12 @@ class NameSetupScreen extends StatefulWidget {
 class _NameSetupScreenState extends State<NameSetupScreen> {
   final TextEditingController _nameController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _saveName() async {
     final name = _nameController.text.trim();
@@ -30,96 +41,77 @@ class _NameSetupScreenState extends State<NameSetupScreen> {
         UserAttributes(data: {'name': name}),
       );
 
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Homewidget()),
-        );
-      }
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const Homewidget()),
+      );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text("Setup Your Name"),
-        backgroundColor: const Color.fromARGB(255, 32, 219, 126),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.all(size.width * 0.06),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 30),
-
-                // Icon or illustration
-                Icon(
-                  Icons.person,
-                  size: 100,
-                  color: Colors.green.shade400,
-                ),
-                const SizedBox(height: 20),
-
-                // Heading
-                const Text(
-                  "Enter your name to personalize your account",
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
+        child: ResponsiveBody(
+          scrollable: true,
+          padding: AppSpacing.screenPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: AppSpacing.xl),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-
-                // Name input
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.edit),
-                    labelText: "Your Name",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    size: 64,
+                    color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 30),
-
-                // Save button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _saveName,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 32, 219, 126),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            "Save",
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                  ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const Text(
+                "Enter your name to personalize your account",
+                style: AppTextStyles.title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              TextField(
+                controller: _nameController,
+                style: AppTextStyles.body,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.edit_outlined, color: AppColors.primary),
+                  labelText: "Your Name",
+                  hintText: "Enter full name",
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              AppButton(
+                text: "Save",
+                isLoading: _isLoading,
+                onPressed: _isLoading ? null : _saveName,
+                width: double.infinity,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
           ),
         ),
       ),

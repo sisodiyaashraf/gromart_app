@@ -2,6 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:otp_text_field/otp_field.dart';
 import 'package:otp_text_field/style.dart';
+import 'package:project_01/core/theme/app_colors.dart';
+import 'package:project_01/core/theme/app_spacing.dart';
+import 'package:project_01/core/theme/app_text_styles.dart';
+import 'package:project_01/core/widgets/app_button.dart';
+import 'package:project_01/core/widgets/responsive_body.dart';
 import 'package:project_01/pages/login_pages/NameSetupScreen.dart';
 import 'package:project_01/widgets/homewidget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -17,7 +22,6 @@ class OtpVerifyScreen extends StatefulWidget {
 class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
   String _otpCode = "";
   bool _isLoading = false;
-
   int _secondsRemaining = 30;
   Timer? _timer;
 
@@ -54,156 +58,110 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
     }
 
     setState(() => _isLoading = true);
-
     try {
       final res = await Supabase.instance.client.auth.verifyOTP(
         phone: widget.phone,
         token: _otpCode,
         type: OtpType.sms,
       );
-
-      final user = res.user;
-      if (user != null) {
-        final hasName = user.userMetadata?['name'] != null;
-
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  hasName ? const Homewidget() : const NameSetupScreen(),
-            ),
-          );
-        }
+      if (!mounted) return;
+      if (res.user != null) {
+        final hasName = res.user!.userMetadata?['name'] != null;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => hasName ? const Homewidget() : const NameSetupScreen(),
+          ),
+        );
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Invalid OTP")),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Invalid OTP")));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    setState(() => _isLoading = false);
   }
 
   Future<void> _resendOtp() async {
     try {
       await Supabase.instance.client.auth.signInWithOtp(phone: widget.phone);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("OTP Resent!")),
-        );
-      }
-      _startTimer(); // restart countdown after resend
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("OTP Resent!")));
+      _startTimer();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error resending OTP: $e")),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final textScale = size.width / 400;
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Verify OTP"),
-        backgroundColor: const Color.fromARGB(255, 32, 219, 126),
-      ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text("Verify OTP")),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.all(size.width * 0.06),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: size.height * 0.05),
+        child: ResponsiveBody(
+          scrollable: true,
+          padding: AppSpacing.screenPadding,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double maxWidth = constraints.maxWidth;
+              final double fieldWidth = ((maxWidth - 40) / 6).clamp(38.0, 48.0);
 
-                // Header
-                Text(
-                  "OTP sent to",
-                  style: TextStyle(
-                    fontSize: 18 * textScale,
-                    fontWeight: FontWeight.w500,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppSpacing.xl),
+                  const Text("OTP sent to", style: AppTextStyles.bodySecondary, textAlign: TextAlign.center),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    widget.phone,
+                    style: AppTextStyles.title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Text(
-                  widget.phone,
-                  style: TextStyle(
-                    fontSize: 20 * textScale,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-
-                SizedBox(height: size.height * 0.04),
-
-                /// OTP FIELD
-                OTPTextField(
-                  length: 6,
-                  width: size.width,
-                  fieldWidth: size.width * 0.12,
-                  style: TextStyle(fontSize: 20 * textScale),
-                  textFieldAlignment: MainAxisAlignment.spaceAround,
-                  fieldStyle: FieldStyle.box,
-                  onChanged: (pin) => setState(() => _otpCode = pin),
-                  onCompleted: (pin) => setState(() => _otpCode = pin),
-                ),
-
-                SizedBox(height: size.height * 0.05),
-
-                // Verify Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _verifyOtp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 32, 219, 126),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        vertical: size.height * 0.02,
+                  const SizedBox(height: AppSpacing.xxl),
+                  Center(
+                    child: SizedBox(
+                      width: maxWidth,
+                      child: OTPTextField(
+                        length: 6,
+                        width: maxWidth,
+                        fieldWidth: fieldWidth,
+                        style: AppTextStyles.headline,
+                        textFieldAlignment: MainAxisAlignment.spaceAround,
+                        fieldStyle: FieldStyle.box,
+                        onChanged: (pin) => setState(() => _otpCode = pin),
+                        onCompleted: (pin) => setState(() => _otpCode = pin),
                       ),
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                            "Verify",
-                            style: TextStyle(
-                              fontSize: 18 * textScale,
-                              color: Colors.white,
-                            ),
-                          ),
                   ),
-                ),
-
-                SizedBox(height: size.height * 0.02),
-
-                // Resend Button
-                TextButton(
-                  onPressed: _secondsRemaining == 0 ? _resendOtp : null,
-                  child: Text(
-                    _secondsRemaining == 0
-                        ? "Resend OTP"
-                        : "Resend OTP (${_secondsRemaining}s)",
-                    style: TextStyle(fontSize: 16 * textScale),
+                  const SizedBox(height: AppSpacing.xxl),
+                  AppButton(
+                    text: "Verify",
+                    isLoading: _isLoading,
+                    onPressed: _isLoading ? null : _verifyOtp,
+                    width: double.infinity,
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: AppSpacing.md),
+                  Center(
+                    child: TextButton(
+                      onPressed: _secondsRemaining == 0 ? _resendOtp : null,
+                      style: TextButton.styleFrom(minimumSize: const Size(120, 48)),
+                      child: Text(
+                        _secondsRemaining == 0 ? "Resend OTP" : "Resend OTP (${_secondsRemaining}s)",
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: _secondsRemaining == 0 ? AppColors.primary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
+              );
+            },
           ),
         ),
       ),
