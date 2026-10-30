@@ -18,7 +18,7 @@ class SearchSection extends StatelessWidget {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: const Color(0xff1df16f17).withOpacity(0.11),
+            color: const Color(0x1DFF6F17),
             blurRadius: 40,
             spreadRadius: 0,
           ),

@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/chat_message.dart';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart' as DotEnv;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Gemini configuration loaded from .env
-final String GEMINI_API_KEY = DotEnv.env['GEMINI_API_KEY'] ?? '';
-final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+final String geminiApiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+final String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 class ChatProvider extends ChangeNotifier {
   final List<ChatMessage> _messages = [];
@@ -23,7 +23,7 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final url = "$GEMINI_URL?key=$GEMINI_API_KEY";
+      final url = "$geminiUrl?key=$geminiApiKey";
 
       final body = jsonEncode({
         "contents": [

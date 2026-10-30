@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-const String GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
-const String GEMINI_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+final String geminiApiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+final String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 Future<String> sendGroceryMessage(String userText) async {
-  final url = "$GEMINI_URL?key=$GEMINI_API_KEY";
+final String url = "${geminiUrl}?key=$geminiApiKey";
 
   final body = jsonEncode({
     "contents": [

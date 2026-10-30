@@ -14,16 +14,11 @@ class SupabaseOrdersDatasource {
   }
 
   Future<List<OrderModel>> fetchOrders(String userId) async {
-    final response = await _client
+    final data = await _client
         .from('orders')
         .select()
         .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .execute();
-    if (response.error != null) {
-      throw response.error!;
-    }
-    final List data = response.data as List;
-    return data.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
+        .order('created_at', ascending: false);
+    return (data as List).map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 }

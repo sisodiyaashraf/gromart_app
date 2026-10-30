@@ -1,5 +1,5 @@
 import 'package:project_01/models/order.dart';
-import 'supabase_orders_datasource.dart';
+import '../data/supabase_orders_datasource.dart';
 
 abstract class OrdersRepository {
   Future<void> addOrder(OrderModel order, String userId);
