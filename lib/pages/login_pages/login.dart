@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:project_01/pages/login_pages/OtpVerifyScreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,15 +11,23 @@ class PhoneLoginScreen extends StatefulWidget {
 }
 
 class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
-  final TextEditingController _phoneController = TextEditingController();
+  String _completePhone = '';
   bool _isLoading = false;
+  bool _isValid = false;
 
   Future<void> _sendOtp() async {
+    if (!_isValid || _completePhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a valid phone number")),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       await Supabase.instance.client.auth.signInWithOtp(
-        phone: _phoneController.text.trim(),
+        phone: _completePhone,
       );
 
       if (mounted) {
@@ -26,15 +35,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => OtpVerifyScreen(
-              phone: _phoneController.text.trim(),
+              phone: _completePhone,
             ),
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
     }
 
     setState(() => _isLoading = false);
@@ -42,8 +53,8 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size; // 👈 Screen size
-    final textScale = size.width / 400; // 👈 Scale text based on width
+    final size = MediaQuery.of(context).size;
+    final textScale = size.width / 400;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -52,7 +63,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.all(size.width * 0.05), // dynamic padding
+            padding: EdgeInsets.all(size.width * 0.05),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -89,20 +100,39 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
                 SizedBox(height: size.height * 0.05),
 
-                // Phone number input
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  style: TextStyle(fontSize: 16 * textScale),
+                // Phone number input with country code picker & flag
+                IntlPhoneField(
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.phone),
+                    labelText: 'Phone Number',
+                    labelStyle: TextStyle(fontSize: 14 * textScale),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(),
                     ),
-                    labelText: "Enter Phone Number",
-                    labelStyle: TextStyle(fontSize: 14 * textScale),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color.fromARGB(255, 32, 219, 126),
+                        width: 2,
+                      ),
+                    ),
                   ),
+                  initialCountryCode: 'IN', // Default to India
+                  disableLengthCheck: true,
+                  showDropdownIcon: true,
+                  dropdownIconPosition: IconPosition.trailing,
+                  flagsButtonPadding: const EdgeInsets.only(left: 12),
+                  style: TextStyle(fontSize: 16 * textScale),
+                  onChanged: (phone) {
+                    _completePhone = phone.completeNumber;
+                    try {
+                      _isValid = phone.isValidNumber();
+                    } catch (_) {
+                      _isValid = false;
+                    }
+                  },
                 ),
+
                 SizedBox(height: size.height * 0.03),
 
                 // Send OTP button
