@@ -83,6 +83,7 @@ class _CartSummarySectionState extends State<CartSummarySection>
   bool _invalidPromo = false;
   bool _validPromo = false;
   String _appliedCode = "";
+  bool _isPlacingOrder = false;
 
   @override
   void initState() {
@@ -453,45 +454,92 @@ class _CartSummarySectionState extends State<CartSummarySection>
                     elevation: 6,
                     shadowColor: Colors.green.withAlpha(0x4D), // 30% opacity
                   ),
-                  onPressed: () async {
-                    if (cart.cartItems.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Your cart is empty!")),
-                      );
-                      return;
-                    }
+                  onPressed: _isPlacingOrder
+                      ? null
+                      : () async {
+                          if (cart.cartItems.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Your cart is empty!"),
+                              ),
+                            );
+                            return;
+                          }
 
-                    final newOrder = OrderModel(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      date: DateTime.now(),
-                      items: cart.cartItems
-                          .map((e) => e['product'] as ProductModel)
-                          .toList(),
-                      total: finalTotal,
-                      status: "Pending",
-                    );
+                          setState(() => _isPlacingOrder = true);
 
-                    ordersProvider.addOrder(newOrder);
-                    cart.clearCart();
-                    await PromoService.clearPromo();
+                          try {
+                            final snapshotItems = cart.cartItems.map((e) {
+                              final p = e['product'] as ProductModel;
+                              final q = (e['quantity'] as num?)?.toInt() ?? 1;
+                              return OrderItem(
+                                productId: p.name,
+                                name: p.name,
+                                price: p.price,
+                                quantity: q,
+                                image: p.image,
+                                weight: p.weight,
+                              );
+                            }).toList();
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Order placed successfully!")),
-                    );
+                            final newOrder = OrderModel(
+                              id: DateTime.now().millisecondsSinceEpoch.toString(),
+                              date: DateTime.now(),
+                              items: snapshotItems,
+                              total: finalTotal,
+                              status: "pending",
+                              deliveryType: 'pickup',
+                              deliveryFee: 0.0,
+                            );
 
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const OrdersPage()),
-                    );
-                  },
-                  child: const Text(
-                    "Proceed to Checkout",
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white),
-                  ),
+                            await ordersProvider.placeOrder(newOrder);
+
+                            cart.clearCart();
+                            await PromoService.clearPromo();
+
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Order placed successfully!"),
+                              ),
+                            );
+
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const OrdersPage(),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Failed to place order: $e"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isPlacingOrder = false);
+                            }
+                          }
+                        },
+                  child: _isPlacingOrder
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          "Proceed to Checkout",
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white),
+                        ),
                 ),
               ),
             ],

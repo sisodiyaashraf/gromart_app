@@ -1,17 +1,50 @@
-import 'dart:ui';
 import 'package:project_01/models/product.dart';
 
-/// Order model used throughout the app.
-/// Includes optional delivery information.
+/// Order and OrderItem models for Gromart app and Supabase persistence.
+class OrderItem {
+  final String productId;
+  final String name;
+  final double price;
+  final int quantity;
+  final String image;
+  final String weight;
+
+  OrderItem({
+    required this.productId,
+    required this.name,
+    required this.price,
+    this.quantity = 1,
+    required this.image,
+    this.weight = '',
+  });
+
+  Map<String, dynamic> toJson() => {
+        'product_id': productId,
+        'name': name,
+        'price': price,
+        'quantity': quantity,
+        'image': image,
+      };
+
+  factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
+        productId: (json['product_id'] ?? json['id'] ?? json['name'] ?? '').toString(),
+        name: (json['name'] ?? '').toString(),
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+        image: (json['image'] ?? '').toString(),
+        weight: (json['weight'] ?? '').toString(),
+      );
+}
+
 class OrderModel {
-  // Core fields
   final String id;
+  final String? userId;
   final DateTime date;
-  final List<ProductModel> items;
+  final List<OrderItem> items;
   final double total;
   final String status;
 
-  // Delivery fields (optional)
+  // Delivery fields
   final String? deliveryType; // 'pickup' or 'delivery'
   final String? deliveryAddressText;
   final double? deliveryLat;
@@ -22,10 +55,11 @@ class OrderModel {
 
   OrderModel({
     required this.id,
+    this.userId,
     required this.date,
-    required this.items,
+    required dynamic items,
     required this.total,
-    this.status = "Pending",
+    this.status = "pending",
     this.deliveryType,
     this.deliveryAddressText,
     this.deliveryLat,
@@ -33,21 +67,76 @@ class OrderModel {
     this.deliveryFee,
     this.deliverySlot,
     this.deliveryInstructions,
-  });
+  }) : items = _normalizeItems(items);
+
+  static List<OrderItem> _normalizeItems(dynamic rawItems) {
+    if (rawItems is List<OrderItem>) return rawItems;
+    if (rawItems is List<ProductModel>) {
+      return rawItems
+          .map((p) => OrderItem(
+                productId: p.name,
+                name: p.name,
+                price: p.price,
+                quantity: 1,
+                image: p.image,
+                weight: p.weight,
+              ))
+          .toList();
+    }
+    if (rawItems is List) {
+      return rawItems.map((e) {
+        if (e is OrderItem) return e;
+        if (e is ProductModel) {
+          return OrderItem(
+            productId: e.name,
+            name: e.name,
+            price: e.price,
+            quantity: 1,
+            image: e.image,
+            weight: e.weight,
+          );
+        }
+        if (e is Map<String, dynamic>) return OrderItem.fromJson(e);
+        return OrderItem(productId: '', name: '', price: 0, image: '');
+      }).toList();
+    }
+    return [];
+  }
+
+  /// Status labels:
+  /// pending -> Placed
+  /// confirmed -> Confirmed
+  /// packing -> Packing
+  /// out_for_delivery -> Out for delivery
+  /// delivered -> Delivered
+  /// cancelled -> Cancelled
+  static String formatStatus(String? rawStatus) {
+    switch (rawStatus?.toLowerCase().trim()) {
+      case 'pending':
+        return 'Placed';
+      case 'confirmed':
+        return 'Confirmed';
+      case 'packing':
+        return 'Packing';
+      case 'out_for_delivery':
+        return 'Out for delivery';
+      case 'delivered':
+        return 'Delivered';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return rawStatus ?? 'Placed';
+    }
+  }
+
+  String get displayStatus => formatStatus(status);
 
   /// Convert to JSON for Supabase insertion.
-  /// `userId` is the authenticated user's UUID.
+  /// Sends ONLY allowed client fields.
+  /// Never id, status, created_at, delivery_address, payment_method, or payment_intent_id.
   Map<String, dynamic> toJson(String userId) => {
         "user_id": userId,
-        "items": items
-            .map((p) => {
-                  "product_id": p.name, // placeholder: using name as id
-                  "name": p.name,
-                  "price": p.price,
-                  "quantity": 1,
-                  "image": p.image,
-                })
-            .toList(),
+        "items": items.map((p) => p.toJson()).toList(),
         "total": total,
         "delivery_type": deliveryType,
         "delivery_address_text": deliveryAddressText,
@@ -56,23 +145,20 @@ class OrderModel {
         "delivery_fee": deliveryFee,
         "delivery_slot": deliverySlot?.toUtc().toIso8601String(),
         "delivery_instructions": deliveryInstructions,
-
       };
 
-  /// Build an OrderModel from Supabase JSON.
+  /// Tolerates null items/user_id, reads created_at as local time.
   factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
-        id: json["id"] as String,
-        date: DateTime.parse(json["created_at"] as String).toLocal(),
-        items: (json["items"] as List?)?.map((e) => ProductModel(
-                  name: e["name"] as String,
-                  price: (e["price"] as num).toDouble(),
-                  weight: "",
-                  image: e["image"] as String,
-                  boxColor: const Color(0xFFE0E0E0),
-                  unit: "1",
-                  category: "",
-                )).toList() ?? [],
-        total: (json["total"] as num).toDouble(),
+        id: (json["id"] ?? "").toString(),
+        userId: json["user_id"] as String?,
+        date: json["created_at"] != null
+            ? DateTime.parse(json["created_at"] as String).toLocal()
+            : DateTime.now(),
+        items: (json["items"] as List?)
+                ?.map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [],
+        total: (json["total"] as num?)?.toDouble() ?? 0.0,
         status: (json["status"] as String?) ?? "pending",
         deliveryType: json["delivery_type"] as String?,
         deliveryAddressText: json["delivery_address_text"] as String?,
@@ -85,58 +171,27 @@ class OrderModel {
         deliveryInstructions: json["delivery_instructions"] as String?,
       );
 
-  // Dummy data for UI preview – delivery fields are left null.
-  // Helper for UI preview – keeps dummy data unchanged.
-static List<OrderModel> getOrders() => [
+  // Helper for UI preview
+  static List<OrderModel> getOrders() => [
         OrderModel(
           id: "#1001",
           date: DateTime(2025, 9, 20),
           total: 25.50,
-          status: "Delivered",
+          status: "delivered",
           items: [
-            ProductModel(
+            OrderItem(
+              productId: "1",
               name: "Broccoli",
               price: 5.0,
               weight: "500g",
               image: "assets/images/broccali.png",
-              boxColor: const Color(0xFFE8F5E9),
-              unit: '4',
-              category: "Vegetable",
             ),
-            ProductModel(
-              name: "Milk",
-              price: 15.5,
-              weight: "1L",
-              image: "assets/images/milk.png",
-              boxColor: const Color(0xFFE3F2FD),
-              unit: '3',
-              category: "Sweet",
-            ),
-          ],
-        ),
-        OrderModel(
-          id: "#1002",
-          date: DateTime(2025, 9, 19),
-          total: 12.75,
-          status: "Pending",
-          items: [
-            ProductModel(
-              name: "Tomato",
-              price: 7.5,
-              weight: "1kg",
-              image: "assets/images/broccali.png",
-              boxColor: const Color(0xFFFFEBEE),
-              unit: '1',
-              category: "Vegetable",
-            ),
-            ProductModel(
+            OrderItem(
+              productId: "2",
               name: "Banana",
-              price: 5.25,
-              weight: "1 Dozen",
+              price: 2.5,
+              weight: "1kg",
               image: "assets/images/milk.png",
-              boxColor: const Color(0xFFFFF9C4),
-              unit: '2',
-              category: "Vegetable",
             ),
           ],
         ),
