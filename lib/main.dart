@@ -4,8 +4,8 @@ import 'package:project_01/pages/login_pages/login.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:project_01/provider/address_provider.dart';
-import 'package:project_01/provider/delivery_provider.dart';
+import 'package:project_01/features/delivery/presentation/providers/address_provider.dart';
+import 'package:project_01/features/delivery/presentation/providers/delivery_provider.dart';
 
 // ✅ Your Providers
 import 'package:project_01/pages/cart_provider.dart';

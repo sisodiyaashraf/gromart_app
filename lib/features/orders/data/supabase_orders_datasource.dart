@@ -3,10 +3,11 @@ import 'package:project_01/models/order.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseOrdersDatasource {
-  final SupabaseClient _client;
+  final SupabaseClient? _customClient;
 
-  SupabaseOrdersDatasource({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseOrdersDatasource({SupabaseClient? client}) : _customClient = client;
+
+  SupabaseClient get _client => _customClient ?? Supabase.instance.client;
 
   Future<OrderModel> insertOrder(OrderModel order, String userId) async {
     try {

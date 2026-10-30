@@ -4,11 +4,21 @@ import '../pages/cart_provider.dart';
 
 class CartItemsList extends StatelessWidget {
   final CartProvider cart;
-  const CartItemsList({super.key, required this.cart});
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
+
+  const CartItemsList({
+    super.key,
+    required this.cart,
+    this.shrinkWrap = false,
+    this.physics,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      shrinkWrap: shrinkWrap,
+      physics: physics,
       itemCount: cart.cartItems.length,
       itemBuilder: (context, index) {
         final item = cart.cartItems[index];
@@ -31,9 +41,9 @@ class CartItemsList extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                height: 90,
-                width: 90,
-                margin: const EdgeInsets.all(12),
+                height: 76,
+                width: 76,
+                margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: product.boxColor,
@@ -45,35 +55,66 @@ class CartItemsList extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(product.name,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
-                      const SizedBox(height: 4),
+                      Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
                       Text(
                         "${product.weight} • \$${product.price.toStringAsFixed(2)}",
                         style: TextStyle(
                           color: Colors.grey.shade600,
-                          fontSize: 14,
+                          fontSize: 13,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
+                      const SizedBox(height: 6),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.remove_circle,
-                                color: Colors.red),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            icon: const Icon(
+                              Icons.remove_circle,
+                              color: Colors.red,
+                              size: 22,
+                            ),
                             onPressed: () => cart.removeProduct(product),
                           ),
-                          Text("$quantity",
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: Text(
+                              "$quantity",
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
                           IconButton(
-                            icon: const Icon(Icons.add_circle,
-                                color: Colors.green),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            icon: const Icon(
+                              Icons.add_circle,
+                              color: Colors.green,
+                              size: 22,
+                            ),
                             onPressed: () => cart.addProduct(product, 1),
                           ),
                         ],
@@ -83,11 +124,13 @@ class CartItemsList extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Text(
                   "\$${(product.price * quantity).toStringAsFixed(2)}",
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ],

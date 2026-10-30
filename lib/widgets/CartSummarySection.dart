@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:project_01/core/theme/app_colors.dart';
+import 'package:project_01/core/utils/currency_formatter.dart';
+import 'package:project_01/features/delivery/presentation/providers/delivery_provider.dart';
+import 'package:project_01/features/delivery/presentation/widgets/checkout_delivery_widget.dart';
 import 'package:project_01/models/order.dart';
 import 'package:project_01/models/product.dart';
 import 'package:project_01/pages/cart_provider.dart';
@@ -6,7 +10,7 @@ import 'package:project_01/pages/orders_provider.dart';
 import 'package:project_01/widgets/order.dart';
 import 'package:provider/provider.dart';
 
-/// ✅ Simple Promo Result model
+/// Simple Promo Result model
 class PromoResult {
   final bool valid;
   final String code;
@@ -21,7 +25,7 @@ class PromoResult {
   });
 }
 
-/// ✅ PromoService inline helper
+/// PromoService inline helper
 class PromoService {
   static PromoResult applyPromo(
       String code, double subtotal, double deliveryFee) {
@@ -109,8 +113,8 @@ class _CartSummarySectionState extends State<CartSummarySection>
     final savedCode = await PromoService.loadPromo();
     if (savedCode != null && mounted) {
       final cart = widget.cart;
-      final deliveryFee = cart.totalPrice > 50 ? 0.0 : 4.99;
-      _applyPromo(savedCode, cart.totalPrice, deliveryFee, silent: true);
+      final deliveryProvider = context.read<DeliveryProvider>();
+      _applyPromo(savedCode, cart.totalPrice, deliveryProvider.fee, silent: true);
       _promoController.text = savedCode;
     }
   }
@@ -165,7 +169,6 @@ class _CartSummarySectionState extends State<CartSummarySection>
     }
   }
 
-  /// ✅ Now properly defined
   void _showOffersBottomSheet(
       BuildContext context, double subtotal, double deliveryFee) {
     showModalBottomSheet(
@@ -187,7 +190,6 @@ class _CartSummarySectionState extends State<CartSummarySection>
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // Header
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -223,7 +225,7 @@ class _CartSummarySectionState extends State<CartSummarySection>
                               code == "SAVE10"
                                   ? Icons.percent
                                   : Icons.local_shipping,
-                              color: Colors.green,
+                              color: AppColors.primary,
                             ),
                             title: Text(code,
                                 style: const TextStyle(
@@ -258,20 +260,23 @@ class _CartSummarySectionState extends State<CartSummarySection>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: bold ? 18 : 16,
-              fontWeight: bold ? FontWeight.bold : FontWeight.w400,
-              color: highlight ? Colors.green : Colors.black54,
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: bold ? 18 : 16,
+                fontWeight: bold ? FontWeight.bold : FontWeight.w400,
+                color: highlight ? AppColors.primary : Colors.black54,
+              ),
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             value,
             style: TextStyle(
               fontSize: bold ? 18 : 16,
               fontWeight: bold ? FontWeight.bold : FontWeight.w500,
-              color: highlight ? Colors.green : Colors.black,
+              color: highlight ? AppColors.primary : Colors.black,
             ),
           ),
         ],
@@ -283,9 +288,16 @@ class _CartSummarySectionState extends State<CartSummarySection>
   Widget build(BuildContext context) {
     final cart = widget.cart;
     final ordersProvider = Provider.of<OrdersProvider>(context, listen: false);
+    final deliveryProvider = context.watch<DeliveryProvider>();
 
-    double deliveryFee = cart.totalPrice > 50 ? 0.0 : 4.99;
-    double finalTotal = cart.totalPrice + deliveryFee - _discount;
+    final double deliveryFee = deliveryProvider.fee;
+    final double finalTotal =
+        (cart.totalPrice + deliveryFee - _discount).clamp(0.0, double.infinity);
+
+    final bool isDeliveryInvalid =
+        deliveryProvider.isDelivery && !deliveryProvider.isValidDelivery;
+    final bool canPlaceOrder =
+        !_isPlacingOrder && !isDeliveryInvalid && cart.cartItems.isNotEmpty;
 
     return AnimatedSlide(
       duration: const Duration(milliseconds: 500),
@@ -297,11 +309,11 @@ class _CartSummarySectionState extends State<CartSummarySection>
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withAlpha(0xE6), // 90% opacity
+            color: Colors.white.withAlpha(0xE6),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(0x14), // 8% opacity
+                color: Colors.black.withAlpha(0x14),
                 blurRadius: 20,
                 offset: const Offset(0, -4),
               ),
@@ -310,6 +322,10 @@ class _CartSummarySectionState extends State<CartSummarySection>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // 🚚 Delivery / Pickup Configuration
+              const CheckoutDeliveryWidget(),
+              const SizedBox(height: 16),
+
               // 🎁 Promo Chip
               if (_validPromo)
                 Padding(
@@ -326,7 +342,7 @@ class _CartSummarySectionState extends State<CartSummarySection>
                             .message,
                         style: const TextStyle(color: Colors.white),
                       ),
-                      backgroundColor: Colors.green,
+                      backgroundColor: AppColors.primary,
                       deleteIcon: const Icon(Icons.close, color: Colors.white),
                       onDeleted: _removePromo,
                     ),
@@ -352,14 +368,14 @@ class _CartSummarySectionState extends State<CartSummarySection>
                           color: _invalidPromo
                               ? Colors.red
                               : _validPromo
-                                  ? Colors.green
+                                  ? AppColors.primary
                                   : Colors.transparent,
                           width: 2,
                         ),
                         boxShadow: [
                           if (_validPromo)
                             BoxShadow(
-                              color: Colors.green.withAlpha(0x4D), // 30% opacity
+                              color: AppColors.primary.withAlpha(0x4D),
                               blurRadius: 12,
                               spreadRadius: 2,
                             )
@@ -373,10 +389,10 @@ class _CartSummarySectionState extends State<CartSummarySection>
                       ),
                       child: Row(
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             child:
-                                Icon(Icons.card_giftcard, color: Colors.green),
+                                Icon(Icons.card_giftcard, color: AppColors.primary),
                           ),
                           Expanded(
                             child: TextField(
@@ -393,8 +409,8 @@ class _CartSummarySectionState extends State<CartSummarySection>
                               cart.totalPrice,
                               deliveryFee,
                             ),
-                            child: const Text("Apply",
-                                style: TextStyle(color: Colors.green)),
+                            child: Text("Apply",
+                                style: TextStyle(color: AppColors.primary)),
                           ),
                         ],
                       ),
@@ -408,10 +424,9 @@ class _CartSummarySectionState extends State<CartSummarySection>
                           cart.totalPrice,
                           deliveryFee,
                         ),
-                        icon:
-                            const Icon(Icons.local_offer, color: Colors.green),
-                        label: const Text("See Offers",
-                            style: TextStyle(color: Colors.green)),
+                        icon: Icon(Icons.local_offer, color: AppColors.primary),
+                        label: Text("See Offers",
+                            style: TextStyle(color: AppColors.primary)),
                       ),
                     ),
                   ],
@@ -422,41 +437,41 @@ class _CartSummarySectionState extends State<CartSummarySection>
 
               // Price Details
               _buildPriceRow(
-                  "Subtotal", "\$${cart.totalPrice.toStringAsFixed(2)}"),
+                  "Subtotal", CurrencyFormatter.format(cart.totalPrice)),
               _buildPriceRow(
                 "Delivery Fee",
                 deliveryFee == 0.0
                     ? "Free"
-                    : "\$${deliveryFee.toStringAsFixed(2)}",
+                    : CurrencyFormatter.format(deliveryFee),
                 highlight: deliveryFee == 0.0,
               ),
               if (_discount > 0)
                 _buildPriceRow(
                   "Discount",
-                  "-\$${_discount.toStringAsFixed(2)}",
+                  "-${CurrencyFormatter.format(_discount)}",
                   highlight: true,
                 ),
               const Divider(height: 30, thickness: 1),
-              _buildPriceRow("Total", "\$${finalTotal.toStringAsFixed(2)}",
+              _buildPriceRow("Total", CurrencyFormatter.format(finalTotal),
                   bold: true, highlight: true),
               const SizedBox(height: 16),
 
               // Checkout Button
               SizedBox(
                 width: double.infinity,
+                height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: Colors.grey.shade400,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    elevation: 6,
-                    shadowColor: Colors.green.withAlpha(0x4D), // 30% opacity
+                    elevation: canPlaceOrder ? 4 : 0,
                   ),
-                  onPressed: _isPlacingOrder
-                      ? null
-                      : () async {
+                  onPressed: canPlaceOrder
+                      ? () async {
                           if (cart.cartItems.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -488,14 +503,24 @@ class _CartSummarySectionState extends State<CartSummarySection>
                               items: snapshotItems,
                               total: finalTotal,
                               status: "pending",
-                              deliveryType: 'pickup',
-                              deliveryFee: 0.0,
+                              deliveryType: deliveryProvider.type,
+                              deliveryAddressText:
+                                  deliveryProvider.selectedAddressText,
+                              deliveryLat: deliveryProvider.selectedLat,
+                              deliveryLng: deliveryProvider.selectedLng,
+                              deliveryFee: deliveryProvider.fee,
+                              deliverySlot: deliveryProvider.slot,
+                              deliveryInstructions: deliveryProvider
+                                      .instructions.trim().isNotEmpty
+                                  ? deliveryProvider.instructions.trim()
+                                  : null,
                             );
 
                             await ordersProvider.placeOrder(newOrder);
 
                             cart.clearCart();
                             await PromoService.clearPromo();
+                            deliveryProvider.reset();
 
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -523,19 +548,22 @@ class _CartSummarySectionState extends State<CartSummarySection>
                               setState(() => _isPlacingOrder = false);
                             }
                           }
-                        },
+                        }
+                      : null,
                   child: _isPlacingOrder
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
+                          height: 22,
+                          width: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          "Proceed to Checkout",
-                          style: TextStyle(
+                      : Text(
+                          isDeliveryInvalid
+                              ? "Select Valid Delivery Address"
+                              : "Proceed to Checkout",
+                          style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                               color: Colors.white),

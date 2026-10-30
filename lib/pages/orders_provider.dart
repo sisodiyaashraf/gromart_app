@@ -29,31 +29,35 @@ class OrdersProvider extends ChangeNotifier {
   String? get userName => _userName;
 
   void _initAuth() {
-    final client = Supabase.instance.client;
-    final currentSession = client.auth.currentSession;
-    if (currentSession != null) {
-      _syncUserData(currentSession.user);
-      _loadOrders(currentSession.user.id);
-    }
-
-    _authSub = client.auth.onAuthStateChange.listen((data) {
-      if (_loginPaused) return;
-      final session = data.session;
-      if (data.event == AuthChangeEvent.initialSession ||
-          data.event == AuthChangeEvent.signedIn) {
-        if (session != null) {
-          _syncUserData(session.user);
-          _loadOrders(session.user.id);
-        }
-      } else if (data.event == AuthChangeEvent.signedOut) {
-        _userId = null;
-        _userPhone = null;
-        _userName = null;
-        _orders.clear();
-        _error = null;
-        notifyListeners();
+    try {
+      final client = Supabase.instance.client;
+      final currentSession = client.auth.currentSession;
+      if (currentSession != null) {
+        _syncUserData(currentSession.user);
+        _loadOrders(currentSession.user.id);
       }
-    });
+
+      _authSub = client.auth.onAuthStateChange.listen((data) {
+        if (_loginPaused) return;
+        final session = data.session;
+        if (data.event == AuthChangeEvent.initialSession ||
+            data.event == AuthChangeEvent.signedIn) {
+          if (session != null) {
+            _syncUserData(session.user);
+            _loadOrders(session.user.id);
+          }
+        } else if (data.event == AuthChangeEvent.signedOut) {
+          _userId = null;
+          _userPhone = null;
+          _userName = null;
+          _orders.clear();
+          _error = null;
+          notifyListeners();
+        }
+      });
+    } catch (_) {
+      // Allows testing in environments where Supabase is not initialized
+    }
   }
 
   void _syncUserData(User user) {

@@ -1,14 +1,20 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:project_01/models/order.dart';
-import 'package:project_01/widgets/foldingorder.dart'; // ✅ your new FoldingOrder widget
+import 'package:project_01/pages/orders_provider.dart';
+import 'package:project_01/widgets/foldingorder.dart';
+import 'package:provider/provider.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final orders = OrderModel.getOrders(); // dummy orders
+    final ordersProvider = context.watch<OrdersProvider>();
+    final orders = ordersProvider.orders.isNotEmpty
+        ? ordersProvider.orders
+        : OrderModel.getOrders();
 
     return Scaffold(
       appBar: AppBar(
@@ -26,7 +32,7 @@ class OrdersPage extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.all(8.0),
             child: FoldingOrder(
-              header: _buildTicketHeader(order),
+              header: _buildTicketHeader(context, ordersProvider, order),
               content: _buildTicketItems(order),
               footer: _buildTicketFooter(context, order),
             ),
@@ -37,11 +43,26 @@ class OrdersPage extends StatelessWidget {
   }
 
   /// Top section: Order ID + Status
-  Widget _buildTicketHeader(OrderModel order) {
+  Widget _buildTicketHeader(
+      BuildContext context, OrdersProvider ordersProvider, OrderModel order) {
+    final bool isActive = order.status.toLowerCase() != 'delivered' &&
+        order.status.toLowerCase() != 'cancelled';
+
     return ListTile(
       title: Text("Order ${order.id}",
           style: const TextStyle(fontWeight: FontWeight.bold)),
-      trailing: _buildStatusChip(order.status),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildStatusChip(order.displayStatus),
+          if (kDebugMode && isActive)
+            IconButton(
+              icon: const Icon(Icons.fast_forward, size: 20, color: Colors.blue),
+              tooltip: "Advance Status (Debug)",
+              onPressed: () => ordersProvider.debugAdvanceStatus(order.id),
+            ),
+        ],
+      ),
     );
   }
 
@@ -103,6 +124,7 @@ class OrdersPage extends StatelessWidget {
         icon = Icons.check_circle;
         break;
       case "Pending":
+      case "Placed":
         bgColor = Colors.orange.shade100;
         icon = Icons.access_time;
         break;
