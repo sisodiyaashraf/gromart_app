@@ -1,18 +1,18 @@
 import 'dart:async';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:gif/gif.dart';
+import 'package:project_01/core/theme/app_colors.dart';
+import 'package:project_01/core/theme/app_spacing.dart';
 import 'package:project_01/models/categories.dart';
 import 'package:project_01/models/product.dart';
-import 'package:project_01/pages/product_list_screen.dart';
-import 'package:project_01/screens/chat_screen.dart';
 import 'package:project_01/widgets/SearchResultsPage.dart';
-import 'package:project_01/widgets/SeeAllCategoriesPage.dart';
-import 'package:project_01/widgets/searchbar.dart';
-import 'package:project_01/widgets/tabbar.dart';
+import 'package:project_01/widgets/home_banner.dart';
+import 'package:project_01/widgets/home_categories.dart';
+import 'package:project_01/widgets/home_header.dart';
+import 'package:project_01/widgets/home_product_section.dart';
+import 'package:project_01/widgets/home_search.dart';
+import 'package:project_01/widgets/side_menu.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'side_menu.dart';
 
 class Homewidget extends StatefulWidget {
   const Homewidget({super.key});
@@ -25,7 +25,7 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
   final List<CategoryModel> categories = CategoryModel.getCategories();
   final List<ProductModel> product = ProductModel.getProducts();
 
-  final List<String> imgList = [
+  final List<String> imgList = const [
     "assets/images/sale.png",
     "assets/images/Screenshot3.png",
     "assets/images/Screenshot2.png",
@@ -34,20 +34,18 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
   ];
 
   GifController? _gifController;
+  Timer? _gifTimer;
   bool _isMenuOpen = false;
   String _searchQuery = "";
-
-  // ✅ Logged in user
   String _userName = "Guest";
 
   @override
   void initState() {
     super.initState();
     _gifController = GifController(vsync: this);
+    _loadUser();
 
-    _loadUser(); // load supabase user
-
-    Timer.periodic(const Duration(seconds: 5), (_) {
+    _gifTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted && _gifController != null) {
         _gifController!.reset();
         _gifController!.forward();
@@ -57,7 +55,7 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
 
   Future<void> _loadUser() async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
+    if (user != null && mounted) {
       setState(() {
         _userName = user.userMetadata?['name'] ?? "Guest";
       });
@@ -66,154 +64,68 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _gifTimer?.cancel();
     _gifController?.dispose();
     super.dispose();
   }
 
-  void _onMenuSelected(String menuTitle) {
-    setState(() {
-      _isMenuOpen = false;
-    });
-  }
-
-  // 👉 Navigate to results page
   void _navigateToSearch(String query) {
-    if (query.isEmpty) return;
+    if (query.trim().isEmpty) return;
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SearchResultsPage(
-          query: query,
-          products: product,
-        ),
+        builder: (_) => SearchResultsPage(query: query, products: product),
       ),
     );
   }
 
-  // 👉 Live typing update
-  void _updateTyping(String query) {
-    setState(() {
-      _searchQuery = query;
-    });
-  }
-
-  // 👉 Suggestions list
-  Widget _buildSuggestions(String query) {
-    if (query.isEmpty) return const SizedBox.shrink();
-
-    final results = product.where((p) {
-      return p.name.toLowerCase().contains(query.toLowerCase());
-    }).toList();
-
-    return results.isEmpty
-        ? const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text("No suggestions found"),
-          )
-        : ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: results.length,
-            itemBuilder: (context, index) {
-              final item = results[index];
-              return ListTile(
-                leading: Image.asset(item.image, width: 40, height: 40),
-                title: Text(item.name),
-                subtitle: Text("\$${item.price}"),
-                onTap: () => _navigateToSearch(item.name),
-              );
-            },
-          );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final double drawerWidth = (MediaQuery.sizeOf(context).width * 0.75).clamp(240.0, 300.0);
+    final double bottomInset = AppSpacing.bottomNavInset(context, navBarHeight: 72.0);
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
-            left: _isMenuOpen ? 0 : -250,
+            left: _isMenuOpen ? 0 : -drawerWidth,
             top: 0,
             bottom: 0,
             child: SideMenu(
-              onMenuSelected: _onMenuSelected,
+              onMenuSelected: (_) => setState(() => _isMenuOpen = false),
               selectedMenu: '',
-              userName: _userName, // ✅ Pass username to side menu
+              userName: _userName,
             ),
           ),
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            transform: Matrix4.translationValues(_isMenuOpen ? 220 : 0, 0, 0)
-              ..scale(_isMenuOpen ? 0.9 : 1.0),
+            transform: Matrix4.translationValues(_isMenuOpen ? drawerWidth : 0, 0, 0),
             child: AbsorbPointer(
               absorbing: _isMenuOpen,
               child: Scaffold(
-                appBar: AppBar(
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  toolbarHeight: 90,
-                  leading: IconButton(
-                    icon: const Icon(Icons.sort, color: Colors.black87),
-                    onPressed: () {
-                      setState(() => _isMenuOpen = !_isMenuOpen);
-                    },
-                  ),
-                  title: Text(
-                    "Welcome, $_userName 👋",
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                  actions: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const ChatScreen()),
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: _gifController == null
-                            ? const SizedBox.shrink()
-                            : Gif(
-                                controller: _gifController!,
-                                autostart: Autostart.no,
-                                image:
-                                    const AssetImage("assets/images/robot.gif"),
-                                height: 45,
-                                width: 45,
-                              ),
-                      ),
-                    ),
-                  ],
+                backgroundColor: AppColors.background,
+                appBar: HomeHeader(
+                  userName: _userName,
+                  onMenuPressed: () => setState(() => _isMenuOpen = !_isMenuOpen),
+                  gifController: _gifController,
                 ),
                 body: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(bottom: bottomInset),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SearchSection(
+                      HomeSearch(
                         onSearch: _navigateToSearch,
-                        onTyping: _updateTyping,
+                        onTyping: (q) => setState(() => _searchQuery = q),
+                        searchQuery: _searchQuery,
+                        products: product,
                       ),
-                      _buildSuggestions(_searchQuery),
-                      const SizedBox(height: 10),
-                      content(),
-                      const SizedBox(height: 10),
-                      content2(),
-                      const SizedBox(height: 7),
-                      const CustomTabs(),
-                      const SizedBox(height: 7),
-                      const Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Text(
-                          "Products",
-                          style: TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      ProductList(products: product),
+                      HomeBanner(imgList: imgList),
+                      HomeCategories(categories: categories),
+                      HomeProductSection(products: product),
                     ],
                   ),
                 ),
@@ -222,107 +134,6 @@ class _HomewidgetState extends State<Homewidget> with TickerProviderStateMixin {
           ),
         ],
       ),
-    );
-  }
-
-  Widget content() {
-    return CarouselSlider(
-      items: imgList.map((item) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 5),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(13),
-            image: DecorationImage(image: AssetImage(item), fit: BoxFit.cover),
-          ),
-        );
-      }).toList(),
-      options: CarouselOptions(
-        height: 250,
-        autoPlay: true,
-        enlargeCenterPage: true,
-        aspectRatio: 16 / 9,
-        viewportFraction: 0.9,
-      ),
-    );
-  }
-
-  Widget content2() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Categories',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SeeAllCategoriesPage(),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'See all',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 110,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: category.boxColor,
-                        borderRadius: BorderRadius.circular(20),
-                        image: DecorationImage(
-                          image: AssetImage(category.image),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      category.title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }

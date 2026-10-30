@@ -1,25 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:project_01/core/widgets/empty_state.dart';
 import 'package:project_01/widgets/productcart.dart';
 import '../models/product.dart';
-// your ProductCard
 
 class ProductList extends StatelessWidget {
   final List<ProductModel> products;
 
-  ProductList({super.key, required this.products});
-  final List<ProductModel> product = ProductModel.getProducts();
+  const ProductList({super.key, required this.products});
 
   @override
   Widget build(BuildContext context) {
+    if (products.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: EmptyState(
+          icon: Icons.search_off_rounded,
+          title: "No products found",
+          message: "Check back later or try a different search.",
+        ),
+      );
+    }
+
+    final textScaler = MediaQuery.textScalerOf(context);
+    final double scale = textScaler.scale(14) / 14;
+    final double cardExtent = (210.0 + (scale * 70.0)).clamp(260.0, 380.0);
+
     return GridView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      physics: const NeverScrollableScrollPhysics(), // stops inner scrolling
-      shrinkWrap: true, // let grid fit inside scroll view
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // 2 cards per row
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 220,
+        mainAxisExtent: cardExtent,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.75,
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {
