@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_01/core/theme/app_theme.dart';
 import 'package:project_01/pages/login_pages/login.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -42,9 +43,6 @@ Future<void> main() async {
   );
 }
 
-
-
-
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
@@ -53,21 +51,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "Grocery AI Assistant",
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.white,
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(fontSize: 16, color: Colors.black87),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       home: StreamBuilder<AuthState>(
         stream: Supabase.instance.client.auth.onAuthStateChange,
         builder: (context, snapshot) {
